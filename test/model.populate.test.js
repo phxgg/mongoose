@@ -4133,6 +4133,8 @@ describe('model: populate:', function() {
         assert.ok(!doc.items[1].itemDetail);
       });
 
+      // Run with
+      // npx mocha --exit .\test\model.populate.test.js -g 'chatConversation'
       it('chatConversation testing', async function() {
         const userSchema = new Schema({
           name: { type: String }
