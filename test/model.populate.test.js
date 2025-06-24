@@ -4136,8 +4136,60 @@ describe('model: populate:', function() {
       // Run with
       // npx mocha --exit ./test/model.populate.test.js -g 'chatConversation'
       it('chatConversation testing', async function() {
+        const gameSchema = new Schema({
+          _id: String,
+          name: String
+        });
+
+        const boosterGameSchema = new Schema({
+          gameId: String,
+          assignedBy: { type: ObjectId, ref: 'User' }
+        }, {
+          _id: false,
+          id: false,
+          versionKey: false,
+          timestamps: false,
+          toObject: {
+            virtuals: true
+          },
+          toJSON: {
+            virtuals: true
+          }
+        });
+
+        // Add virtual 'game' property to boosterGameSchema
+        boosterGameSchema.virtual('game', {
+          ref: 'Game',
+          localField: 'gameId',
+          foreignField: '_id',
+          justOne: true
+        });
+
+        // Add virtual 'assignedByPopulated' property to boosterGameSchema
+        boosterGameSchema.virtual('assignedByPopulated', {
+          ref: 'User',
+          localField: 'assignedBy',
+          foreignField: '_id',
+          justOne: true
+        });
+
         const userSchema = new Schema({
-          name: { type: String }
+          name: { type: String },
+          boosterGames: {
+            type: [boosterGameSchema],
+            default: []
+          }
+        }, {
+          timestamps: true
+        }).pre(['find', 'findOne'], async function() {
+          this.populate([
+            'boosterGames.game',
+            {
+              path: 'boosterGames.assignedByPopulated',
+              select: 'name'
+              // Do NOT populate boosterGames because it can lead to circular references
+            }
+          ]);
         });
 
         const memberSchema = new Schema(
@@ -4186,6 +4238,7 @@ describe('model: populate:', function() {
             }
           },
           {
+            timestamps: true,
             toObject: {
               virtuals: true
             },
@@ -4204,11 +4257,18 @@ describe('model: populate:', function() {
           });
 
         const ChatConversationModel = db.model('ChatConversation', chatConversationSchema);
+        const GameModel = db.model('Game', gameSchema);
         const UserModel = db.model('User', userSchema);
 
         const users = await UserModel.create(
           { name: 'phxgg' },
           { name: 'giouli' }
+        );
+
+        const game = await GameModel.create({ _id: 'game1', name: 'Game 1' });
+        await UserModel.updateOne(
+          { name: 'giouli' }, // _id: users[1]._id
+          { $push: { boosterGames: { gameId: game._id, assignedBy: users[0]._id } } }
         );
 
         await ChatConversationModel.create({
@@ -4220,6 +4280,9 @@ describe('model: populate:', function() {
 
         const docs = await ChatConversationModel.find({});
         const doc = docs[0];
+        // check if all members have the `memberPopulated` field populated
+        assert.ok(doc.members[0].memberPopulated);
+        assert.ok(doc.members[1].memberPopulated);
         assert.equal(doc.members[0].memberPopulated.id, users[0].id);
         assert.equal(doc.members[1].memberPopulated.id, users[1].id);
       });
