@@ -4134,7 +4134,7 @@ describe('model: populate:', function() {
       });
 
       // Run with
-      // npx mocha --exit .\test\model.populate.test.js -g 'chatConversation'
+      // npx mocha --exit ./test/model.populate.test.js -g 'chatConversation'
       it('chatConversation testing', async function() {
         const userSchema = new Schema({
           name: { type: String }
