@@ -4133,6 +4133,95 @@ describe('model: populate:', function() {
         assert.ok(!doc.items[1].itemDetail);
       });
 
+      it('chatConversation testing', async function() {
+        const userSchema = new Schema({
+          name: { type: String }
+        });
+
+        const memberSchema = new Schema(
+          {
+            memberId: {
+              type: ObjectId,
+              required: true,
+              ref: 'User'
+            },
+            isRead: { type: Boolean, default: false } // Default to false, indicating unread
+          },
+          {
+            _id: false,
+            id: false,
+            versionKey: false,
+            timestamps: false,
+            toObject: {
+              virtuals: true
+            },
+            toJSON: {
+              virtuals: true
+            }
+          }
+        );
+
+        memberSchema.virtual('memberPopulated', {
+          ref: 'User',
+          localField: 'memberId',
+          foreignField: '_id',
+          justOne: true
+        });
+
+        const chatConversationSchema = new Schema(
+          {
+            name: {
+              type: String,
+              required: true,
+              trim: true,
+              maxlength: 100,
+              minlength: 1,
+              default: 'New Conversation'
+            },
+            members: {
+              type: [memberSchema],
+              default: []
+            }
+          },
+          {
+            toObject: {
+              virtuals: true
+            },
+            toJSON: {
+              virtuals: true
+            }
+          }
+        )
+          .pre(['find', 'findOne'], async function() {
+            this.populate([
+              {
+                path: 'members.memberPopulated',
+                select: 'name'
+              }
+            ]);
+          });
+
+        const ChatConversationModel = db.model('ChatConversation', chatConversationSchema);
+        const UserModel = db.model('User', userSchema);
+
+        const users = await UserModel.create(
+          { name: 'phxgg' },
+          { name: 'giouli' }
+        );
+
+        await ChatConversationModel.create({
+          members: [
+            { memberId: users[0]._id },
+            { memberId: users[1]._id }
+          ]
+        });
+
+        const docs = await ChatConversationModel.find({});
+        const doc = docs[0];
+        assert.equal(doc.members[0].memberPopulated.id, users[0].id);
+        assert.equal(doc.members[1].memberPopulated.id, users[1].id);
+      });
+
       it('with no results and justOne (gh-4284)', async function() {
         const PersonSchema = new Schema({
           name: String,
