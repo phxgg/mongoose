@@ -1,3 +1,21 @@
+8.16.2 / 2025-07-07
+===================
+ * fix(cursor): populate after hydrating in queryCursor so populated docs get parent() #15498 #15494
+ * fix(schema): support toJSONSchema() on mixed types and improve error message about unsupported types #15492 #15489
+ * types: add _id and __v to toObject/toJSON transform type #15501 #15479
+ * types(schema): use user-provided THydratedDocumentType as context for virtual get() and set() #15517 #15516
+ * types: improve typing for transform option to toJSON and toObject #15485
+ * docs: link to custom setter docs from lowercase, etc. options and note that setters run on query filters #15493 #15491
+ * docs(jest): add note about resetModules #15515
+
+8.16.1 / 2025-06-26
+===================
+ * fix(document): avoid setting _skipMarkModified when setting nested path with merge option #15484 #11913
+ * fix(model): make sure post save error handler gets doc as param on VersionError #15483 #15480
+ * fix: consistent $conditionalHandlers setup between schematypes #15490
+ * docs(compatibility): note that mongodb 4.0 is not supported anymore since 8.16.0 #15487 [hasezoey](https://github.com/hasezoey)
+ * docs: remove unnecessary --save flag from npm install instruction #15486 [Thahirgeek](https://github.com/Thahirgeek)
+
 8.16.0 / 2025-06-16
 ===================
  * feat(model): add Model.createSearchIndexes() #15470 #15465
